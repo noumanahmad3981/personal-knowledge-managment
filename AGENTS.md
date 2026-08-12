@@ -73,6 +73,8 @@ Checks:
 
 Output: a **Validation Report** (check, pass/fail, notes).
 
+Vault-wide validation: `python3 pkm/scripts/validator.py --all` (optionally `--section <Name>` to scan one section).
+
 On failure: return the work to GeneralTask, then validate again automatically.
 Loop until PASS.
 

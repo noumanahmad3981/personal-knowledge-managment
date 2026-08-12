@@ -30,6 +30,7 @@ EXTRA_TYPES = {
 FM_LINE_RE = re.compile(r'^([A-Za-z0-9_]+)\s*:\s*(.*)$')
 WIKILINK_RE = re.compile(r'\[\[([^\]]+)\]\]')
 CHANGELOG_BULLET_RE = re.compile(r'^-\s*(\d{4})-(\d{2})-(\d{2}):')
+USAGE = 'usage: validator.py [--template <path>] <document.md>'
 
 
 def split_list_items(text):
@@ -291,40 +292,46 @@ def print_report(results):
     return ok
 
 
-def main(argv):
-    args = argv[1:]
-    template_override = None
-    if args and args[0] == '--template':
-        if len(args) != 3:
-            print('usage: validator.py [--template <path>] <document.md>', file=sys.stderr)
-            return 1
-        template_override = args[1]
-        doc_arg = args[2]
-    else:
-        if len(args) != 1:
-            print('usage: validator.py [--template <path>] <document.md>', file=sys.stderr)
-            return 1
-        doc_arg = args[0]
+def discover_notes(vault_root, section=None):
+    sections = [section] if section else list(SECTIONS)
+    notes = []
+    for sec in sections:
+        base = os.path.join(vault_root, sec)
+        if not os.path.isdir(base):
+            continue
+        for root, dirs, files in os.walk(base):
+            dirs[:] = [d for d in dirs if not d.startswith('.')]
+            for fname in files:
+                if fname.startswith('.'):
+                    continue
+                if not fname.endswith('.md'):
+                    continue
+                path = os.path.join(root, fname)
+                rel = os.path.relpath(path, vault_root).replace(os.sep, '/')
+                if any(part.startswith('.') for part in rel.split('/')):
+                    continue
+                notes.append(path)
+    return sorted(notes)
 
-    vault_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    doc_path = os.path.abspath(doc_arg)
-    if not os.path.isfile(doc_path):
-        print('ERROR: document not found: %s' % doc_arg, file=sys.stderr)
-        return 1
 
+def validate_document(doc_path, vault_root, template_override=None):
+    """Validate one document; prints the 9-check report. Returns 0 or 1."""
     section = derive_section(doc_path)
     if section is None:
         print('ERROR: path does not belong to a known section '
-              '(Knowledge/Research/Projects/Ideas): %s' % doc_arg, file=sys.stderr)
+              '(Knowledge/Research/Projects/Ideas): %s' % doc_path, file=sys.stderr)
         return 1
-
     template_path = template_override or os.path.join(vault_root, 'Templates', SECTIONS[section])
     if not os.path.isfile(template_path):
         print('ERROR: template not found: %s' % template_path, file=sys.stderr)
         return 1
-
-    with open(doc_path, encoding='utf-8') as f:
-        text = f.read()
+    try:
+        with open(doc_path, encoding='utf-8') as f:
+            text = f.read()
+    except OSError:
+        print('[FAIL] %s: cannot read document' % doc_path)
+        print('OVERALL: FAIL')
+        return 1
     with open(template_path, encoding='utf-8') as f:
         template_text = f.read()
 
@@ -354,6 +361,69 @@ def main(argv):
         ('VALID STATUS', check_status(doc_data, section)),
     ]
     return 0 if print_report(results) else 1
+
+
+def run_batch(vault_root, section=None):
+    notes = discover_notes(vault_root, section)
+    passed = 0
+    failed = 0
+    for path in notes:
+        try:
+            ok = validate_document(path, vault_root)
+        except Exception as e:
+            print('[FAIL] %s: %s' % (path, e))
+            print('OVERALL: FAIL')
+            ok = 1
+        if ok:
+            failed += 1
+        else:
+            passed += 1
+    print('=== SUMMARY ===')
+    print('Notes scanned: %d' % len(notes))
+    print('Passed: %d' % passed)
+    print('Failed: %d' % failed)
+    if failed:
+        print('RESULT: FAILURES FOUND')
+        return 1
+    print('RESULT: ALL PASS')
+    return 0
+
+
+def main(argv):
+    args = argv[1:]
+    vault_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if args and args[0] == '--all':
+        if len(args) == 1:
+            return run_batch(vault_root)
+        if len(args) == 3 and args[1] == '--section' and args[2] in SECTIONS:
+            return run_batch(vault_root, args[2])
+        print(USAGE, file=sys.stderr)
+        return 1
+    if args and args[0] == '--section':
+        print(USAGE, file=sys.stderr)
+        return 1
+
+    template_override = None
+    if args and args[0] == '--template':
+        if len(args) != 3:
+            print(USAGE, file=sys.stderr)
+            return 1
+        template_override = args[1]
+        doc_arg = args[2]
+    else:
+        if len(args) != 1:
+            print(USAGE, file=sys.stderr)
+            return 1
+        doc_arg = args[0]
+        if doc_arg.startswith('-'):
+            print(USAGE, file=sys.stderr)
+            return 1
+
+    doc_path = os.path.abspath(doc_arg)
+    if not os.path.isfile(doc_path):
+        print('ERROR: document not found: %s' % doc_arg, file=sys.stderr)
+        return 1
+    return validate_document(doc_path, vault_root, template_override)
 
 
 if __name__ == '__main__':
