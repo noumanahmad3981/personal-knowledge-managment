@@ -1,0 +1,78 @@
+{
+  "pkm/Knowledge/Testing/pipeline-test.md": {
+    "current_cycle": 2,
+    "total_cycles": 2,
+    "status": "approved",
+    "cycles": [
+      {
+        "cycle": 1,
+        "date": "2026-08-19",
+        "findings": {
+          "kb-editor": [
+            {
+              "severity": "major",
+              "location": "frontmatter `sources` (line 9)",
+              "issue": "External link in body References is missing from `sources`",
+              "rationale": "The body References section contains an external URL, but frontmatter `sources` is `[]`."
+            },
+            {
+              "severity": "minor",
+              "location": "body `## References` line 25",
+              "issue": "Internal reference uses backtick code path instead of `[[wikilink]]`",
+              "rationale": "Internal references should use `[[wikilink]]` format."
+            },
+            {
+              "severity": "minor",
+              "location": "frontmatter lines 3-4",
+              "issue": "Scalar values are unquoted while vault precedent quotes them",
+              "rationale": "The section template uses quoted values."
+            }
+          ],
+          "kb-tech-lead": [
+            {
+              "severity": "minor",
+              "location": "frontmatter `sources`",
+              "issue": "External link missing from `sources`",
+              "rationale": "Frontmatter `sources` holds external links/DOIs."
+            },
+            {
+              "severity": "minor",
+              "location": "frontmatter `references` / body `## References`",
+              "issue": "Internal template reference not represented as wikilink",
+              "rationale": "Frontmatter `references` holds internal [[wikilinks]] only."
+            }
+          ],
+          "kb-architect": [
+            {
+              "severity": "minor",
+              "location": "frontmatter `sources` (line 9)",
+              "issue": "External link appears only in body, not in frontmatter `sources`",
+              "rationale": "`sources` in frontmatter is the canonical location for external links."
+            },
+            {
+              "severity": "minor",
+              "location": "frontmatter `references` (line 10)",
+              "issue": "Internal vault path appears as plain code text rather than wikilink",
+              "rationale": "Frontmatter `references` holds internal `[[wikilinks]]` only."
+            }
+          ]
+        },
+        "resolved": [0, 1, 2],
+        "recurring": [],
+        "unresolved": []
+      },
+      {
+        "cycle": 2,
+        "date": "2026-08-19",
+        "findings": {
+          "kb-editor": "APPROVED",
+          "kb-tech-lead": "APPROVED",
+          "kb-architect": "APPROVED"
+        },
+        "resolved": [],
+        "recurring": [],
+        "unresolved": []
+      }
+    ]
+  }
+}
