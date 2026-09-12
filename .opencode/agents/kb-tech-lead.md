@@ -15,7 +15,7 @@ Focus on:
 - Technical correctness of code samples, APIs, and specifications.
 - Feasibility of proposed implementations.
 - Correctness of technical claims and details.
-- Adherence to the FastAPI technical stack and conventions where relevant.
+- Adherence to the section's technical stack and conventions where relevant.
 
 Output an Independent Review as a numbered findings list in the form
 `[severity] location → issue → rationale` where severity is one of
